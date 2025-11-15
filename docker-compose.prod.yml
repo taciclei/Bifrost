@@ -1,0 +1,147 @@
+# 🌈⚡ Bifrost - Electric Vehicle Charging Platform
+# Docker Compose - Production Environment
+# Override file for production deployment
+
+services:
+  # =====================================
+  # PHP + FrankenPHP - Production Build
+  # =====================================
+  php:
+    build:
+      target: frankenphp_prod
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: 0
+
+      # Secrets management (use external secrets in production)
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+      MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET}
+
+      # Production optimizations
+      PHP_OPCACHE_VALIDATE_TIMESTAMPS: 0
+      PHP_OPCACHE_PRELOAD: /app/config/preload.php
+      PHP_REALPATH_CACHE_TTL: 600
+
+      # FrankenPHP worker mode (persistent app)
+      FRANKENPHP_CONFIG: "worker ./public/index.php 4"
+
+      # Logging
+      APP_LOG_LEVEL: error
+    restart: always
+    # Remove volume mounts in production
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # =====================================
+  # Database - Production
+  # =====================================
+  database:
+    environment:
+      # Use strong passwords from secrets
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: always
+    # Backup configuration
+    volumes:
+      - database_data:/var/lib/postgresql/data
+      - database_backups:/backups
+
+  # =====================================
+  # Redis - Production
+  # =====================================
+  redis:
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
+    restart: always
+
+  # =====================================
+  # PWA - Production Build
+  # =====================================
+  pwa:
+    build:
+      target: prod
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_ENTRYPOINT: ${NEXT_PUBLIC_API_ENTRYPOINT}
+      NEXT_PUBLIC_MERCURE_URL: ${NEXT_PUBLIC_MERCURE_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      OIDC_SERVER_URL: ${OIDC_SERVER_URL}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+    restart: always
+    # Remove dev volume mounts
+    volumes: []
+
+  # =====================================
+  # OCPP - Production
+  # =====================================
+  ocpp:
+    build:
+      target: ocpp_prod
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      OCPP_REQUIRE_AUTH: "true"
+      OCPP_TLS_CERT: /certs/server.crt
+      OCPP_TLS_KEY: /certs/server.key
+    restart: always
+    volumes:
+      - ./certs:/certs:ro
+
+  # =====================================
+  # Keycloak - Production
+  # =====================================
+  keycloak:
+    command: start
+    environment:
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_PRODUCTION: "true"
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME_URL: ${KEYCLOAK_URL}
+      KC_HOSTNAME_ADMIN_URL: ${KEYCLOAK_ADMIN_URL}
+      KC_HTTP_ENABLED: "false"
+      KC_HTTPS_CERTIFICATE_FILE: /certs/keycloak.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /certs/keycloak.key
+    restart: always
+    volumes:
+      - ./certs:/certs:ro
+
+  keycloak-db:
+    environment:
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    restart: always
+
+  # =====================================
+  # Messenger - Production
+  # =====================================
+  messenger:
+    build:
+      target: frankenphp_prod
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+    restart: always
+    volumes: []
+
+  # =====================================
+  # Remove development services
+  # =====================================
+  mailhog:
+    profiles:
+      - dev
+
+  pgadmin:
+    profiles:
+      - dev
+
+volumes:
+  database_backups:
+    driver: local

@@ -1,0 +1,145 @@
+# 🌈⚡ Bifrost - Caddyfile for FrankenPHP
+# API Platform + Mercure Hub + Sylius
+
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	# FrankenPHP configuration
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+
+	# Metrics endpoint
+	servers {
+		metrics
+	}
+}
+
+{$SERVER_NAME:localhost} {
+	# Logging
+	log {
+		# Format: JSON in production, console in dev
+		format filter {
+			wrap {$LOG_FORMAT:console}
+			fields {
+				request>uri query {
+					delete
+				}
+			}
+		}
+
+		# Exclude health checks from logs
+		output discard {
+			request>uri path_regexp ^/health$
+		}
+	}
+
+	# Compression (Zstandard preferred, fallback to Gzip)
+	encode zstd gzip
+
+	# Security headers
+	header {
+		# Remove server version
+		-Server
+
+		# Security headers
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+
+		# CORS (handled by Symfony, but fallback)
+		Access-Control-Allow-Origin "{$CORS_ALLOW_ORIGIN}"
+		Access-Control-Allow-Credentials "true"
+
+		# Link to Mercure hub for SSE discovery
+		Link `<{$MERCURE_PUBLIC_URL:/.well-known/mercure}>; rel="mercure"`
+	}
+
+	# =====================================
+	# Mercure Hub (Server-Sent Events)
+	# Real-time updates for API resources
+	# =====================================
+	mercure {
+		# Publisher JWT (symmetric key)
+		publisher_jwt {env.MERCURE_JWT_SECRET} {
+			publish *
+		}
+
+		# Subscriber JWT (symmetric key)
+		subscriber_jwt {env.MERCURE_JWT_SECRET} {
+			subscribe *
+		}
+
+		# Allow anonymous subscriptions
+		anonymous
+
+		# Enable subscription endpoint
+		subscriptions
+
+		# CORS for Mercure
+		cors_origins {$CORS_ALLOW_ORIGIN:http://localhost:3000} https://localhost
+
+		# Demo mode for development
+		{$MERCURE_EXTRA_DIRECTIVES}
+	}
+
+	# =====================================
+	# Vulcain (HTTP/2 Server Push)
+	# Preload related resources
+	# =====================================
+	vulcain
+
+	# =====================================
+	# API Routes
+	# =====================================
+
+	# Health check endpoint
+	handle /health {
+		respond "OK" 200
+	}
+
+	# Metrics endpoint (Prometheus format)
+	handle /metrics {
+		reverse_proxy localhost:2019
+	}
+
+	# API Platform endpoints (JSON-LD/Hydra)
+	@api {
+		path /api/*
+		path /docs*
+		path /.well-known/*
+		path /contexts/*
+	}
+	handle @api {
+		php_server
+	}
+
+	# Sylius Admin
+	@admin {
+		path /admin/*
+		path /_wdt/*
+		path /_profiler/*
+	}
+	handle @admin {
+		php_server
+	}
+
+	# Sylius Shop (if not using headless)
+	handle /* {
+		# Try files first (for static assets)
+		root * /app/public
+
+		# PHP-FPM for dynamic requests
+		php_server
+	}
+
+	# Static assets with long cache
+	@static {
+		path *.css *.js *.ico *.gif *.jpg *.jpeg *.png *.svg *.woff *.woff2
+	}
+	header @static {
+		Cache-Control "public, max-age=31536000, immutable"
+	}
+}
