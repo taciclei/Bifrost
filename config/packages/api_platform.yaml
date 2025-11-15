@@ -1,0 +1,149 @@
+api_platform:
+    # Título e descrição da API
+    title: 'Eletroposto API'
+    description: 'API RESTful para gestão de eletropostos - Carregamento de veículos elétricos'
+    version: '1.0.0'
+
+    # Mostrar WebProfiler em dev
+    show_webby: true
+
+    # Swagger/OpenAPI configuration
+    swagger:
+        versions: [3]
+        api_keys:
+            JWT:
+                name: Authorization
+                type: header
+
+    # Formatos suportados
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
+        html: ['text/html']
+        csv: ['text/csv']
+        xml: ['application/xml', 'text/xml']
+
+    # Patch formats
+    patch_formats:
+        json: ['application/merge-patch+json']
+
+    # Error formats
+    error_formats:
+        jsonproblem: ['application/problem+json']
+        jsonld: ['application/ld+json']
+
+    # Defaults
+    defaults:
+        # Paginação padrão
+        pagination_enabled: true
+        pagination_client_enabled: true
+        pagination_client_items_per_page: true
+        pagination_items_per_page: 30
+        pagination_maximum_items_per_page: 100
+
+        # Cache
+        cache_headers:
+            vary: ['Accept', 'Authorization']
+            public: false
+            max_age: 3600
+            shared_max_age: 7200
+
+        # Filtros globais
+        order: 'ASC'
+
+        # Operações padrão
+        stateless: true
+
+        # Exceções
+        exception_to_status:
+            Symfony\Component\Serializer\Exception\ExceptionInterface: 400
+            ApiPlatform\Exception\InvalidArgumentException: 400
+            Doctrine\ORM\OptimisticLockException: 409
+
+    # Configurações de coleção
+    collection:
+        order: 'id'
+        pagination:
+            enabled: true
+            client_enabled: true
+            items_per_page: 30
+            maximum_items_per_page: 100
+
+    # Mapeamento de paths
+    mapping:
+        paths:
+            - '%kernel.project_dir%/src/Entity'
+            - '%kernel.project_dir%/src/Entity/Charging'
+
+    # Doctrine ORM
+    doctrine:
+        enabled: true
+
+    # HTTP Cache
+    http_cache:
+        invalidation:
+            enabled: true
+            varnish_urls: ['%env(VARNISH_URL)%']
+        max_age: 3600
+        shared_max_age: 7200
+        vary: ['Content-Type', 'Authorization', 'Accept-Language']
+
+    # Mercure (para updates em tempo real) - Opcional
+    # mercure:
+    #     enabled: true
+    #     hub_url: '%env(MERCURE_PUBLIC_URL)%'
+
+    # GraphQL (opcional)
+    graphql:
+        enabled: false  # Ativar se necessário
+        # graphiql:
+        #     enabled: true
+        # graphql_playground:
+        #     enabled: true
+
+    # OAuth (se usar)
+    # oauth:
+    #     enabled: true
+    #     clientId: '%env(OAUTH_CLIENT_ID)%'
+    #     clientSecret: '%env(OAUTH_CLIENT_SECRET)%'
+
+    # Configurações de segurança
+    # As permissões são definidas nas annotations/attributes das entidades
+
+    # Validação
+    validator:
+        serialize_payload_fields: []
+
+    # Eager loading para evitar N+1 queries
+    eager_loading:
+        enabled: true
+        max_joins: 30
+        force_eager: true
+
+when@dev:
+    api_platform:
+        # Em dev, mostrar mais detalhes de erros
+        enable_docs: true
+
+        swagger:
+            ui:
+                enabled: true
+
+        graphql:
+            graphiql:
+                enabled: true
+
+when@prod:
+    api_platform:
+        # Em produção, desabilitar docs públicas se necessário
+        enable_docs: false
+
+        swagger:
+            ui:
+                enabled: false  # Ou proteger com autenticação
+
+        # Aumentar cache
+        defaults:
+            cache_headers:
+                max_age: 7200
+                shared_max_age: 14400

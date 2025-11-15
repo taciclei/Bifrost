@@ -1,0 +1,62 @@
+ARG PHP_VERSION=8.3
+
+FROM php:${PHP_VERSION}-cli-alpine
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    bash \
+    curl \
+    git \
+    libzip-dev \
+    postgresql-dev \
+    icu-dev \
+    linux-headers \
+    $PHPIZE_DEPS
+
+# Configurar timezone
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/America/Belem /etc/localtime && \
+    echo "America/Belem" > /etc/timezone
+
+# Instalar extensões PHP
+RUN docker-php-ext-install -j$(nproc) \
+    pdo \
+    pdo_pgsql \
+    pgsql \
+    zip \
+    pcntl \
+    sockets \
+    bcmath
+
+# Instalar Redis extension
+RUN pecl install redis-6.0.2 && \
+    docker-php-ext-enable redis
+
+# Instalar Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Configurar usuário não-root
+RUN addgroup -g 1000 sylius && \
+    adduser -D -u 1000 -G sylius sylius
+
+# Definir working directory
+WORKDIR /var/www/html
+
+# Copiar arquivos do projeto
+COPY --chown=sylius:sylius . .
+
+# Instalar dependências
+RUN composer install --no-interaction --prefer-dist --no-scripts
+
+# Mudar para usuário não-root
+USER sylius
+
+# Expor porta WebSocket
+EXPOSE 9000
+
+# Comando para iniciar servidor WebSocket (Ratchet)
+CMD ["php", "bin/console", "app:websocket:server"]
+
+# Healthcheck para WebSocket
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD nc -z localhost 9000 || exit 1

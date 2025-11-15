@@ -1,0 +1,281 @@
+# Bifrost - Electric Vehicle Charging Stations
+# .gitignore
+
+# ========================================
+# Arquivos do Sistema Operacional
+# ========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ========================================
+# IDEs e Editores
+# ========================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains (PHPStorm, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ========================================
+# Node.js / Frontend
+# ========================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Package manager locks (optional - comentar se quiser versionar)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ========================================
+# PHP / Symfony Backend
+# ========================================
+
+# Vendor dependencies
+/backend/vendor/
+
+# Symfony
+/backend/.env.local
+/backend/.env.local.php
+/backend/.env.*.local
+/backend/config/secrets/prod/prod.decrypt.private.php
+/backend/public/bundles/
+/backend/var/
+/backend/vendor/
+
+# Composer
+composer.phar
+/backend/composer.lock
+
+# PHPUnit
+/backend/phpunit.xml
+/backend/.phpunit.result.cache
+
+# ========================================
+# Python (se usar scripts)
+# ========================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# ========================================
+# Docker
+# ========================================
+
+# Não ignorar docker-compose.yml (queremos versionar)
+# Mas ignorar overrides locais
+docker-compose.override.yml
+.docker/
+
+# ========================================
+# Hardware / KiCad
+# ========================================
+
+# KiCad backup files
+*.bak
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*-save.pro
+*-save.kicad_pcb
+fp-info-cache
+
+# KiCad auto-generated files
+*.pro-bak
+*.sch-bak
+\#auto_saved_files\#
+
+# Fabrication outputs (manter apenas os finais)
+/hardware/**/gerbers/temp/
+/hardware/**/gerbers/backup/
+
+# KiCad temp files
+*.tmp
+*.temp
+
+# ========================================
+# Documentação
+# ========================================
+
+# Build outputs de docs (se usar Sphinx, MkDocs, etc.)
+/docs/_build/
+/docs/.doctrees/
+site/
+
+# LaTeX (se gerar PDFs)
+*.aux
+*.log
+*.out
+*.toc
+*.pdf.tmp
+
+# ========================================
+# Testes e Cobertura
+# ========================================
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Test outputs
+/backend/var/cache/test/
+
+# ========================================
+# CI/CD
+# ========================================
+
+# Secrets e credentials
+*.pem
+*.key
+*.crt
+*.p12
+secrets.yml
+credentials.json
+
+# Terraform (se usar)
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# ========================================
+# Logs
+# ========================================
+
+*.log
+logs/
+*.log.*
+
+# ========================================
+# Temporários
+# ========================================
+
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+
+# ========================================
+# Certificações e Documentos Sensíveis
+# ========================================
+
+# Não versionar documentos com dados sensíveis
+/docs/certificacao/confidencial/
+/docs/legal/contratos/
+
+# Dossiês INMETRO (muito grandes)
+# /docs/certificacao/dossie_inmetro/*.pdf
+
+# ========================================
+# Financeiro
+# ========================================
+
+# Planilhas financeiras com dados reais
+# *_REAL.xlsx
+# *_CONFIDENCIAL.xlsx
+
+# ========================================
+# Backup
+# ========================================
+
+backup/
+*.backup
+*.bkp
+
+# ========================================
+# Específico do Projeto Bifrost
+# ========================================
+
+# Protótipos privados (se existirem)
+/hardware/prototipos_privados/
+
+# Dados de testes reais
+/backend/var/test_data/
+
+# Chaves API (nunca versionar!)
+.env.production
+api_keys.txt
+*.api-key
+
+# Base de dados local
+*.sqlite
+*.db
+
+# ========================================
+# MANTER VERSIONADOS (não ignorar)
+# ========================================
+
+# Documentação importante
+!README.md
+!README_PT-BR.md
+!BUSINESS_PLAN.md
+!PITCH_DECK.md
+!ROADMAP.md
+!ROTEIRO_PT-BR.md
+
+# Arquivos de exemplo
+!.env.example
+!docker-compose.yml.example
+
+# Hardware
+!/hardware/kicad_examples/
+!/hardware/docs/
+
+# Scripts úteis
+!/scripts/
+!generate_fabrication.sh

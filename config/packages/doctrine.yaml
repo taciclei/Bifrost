@@ -1,0 +1,118 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+
+        # PostgreSQL 15 configuration
+        driver: 'pdo_pgsql'
+        server_version: '15'
+        charset: utf8
+        default_table_options:
+            charset: utf8
+            collate: utf8_unicode_ci
+
+        # Schema filter para Sylius + Custom schemas
+        schema_filter: ~^(?!sylius_)(?!messenger_messages)~
+
+        # Configurações de performance
+        options:
+            # Usar prepared statements
+            1000: true  # PDO::ATTR_EMULATE_PREPARES = false
+            1002: 'SET NAMES utf8'  # PDO::ATTR_PERSISTENT
+
+        # Logging de queries (apenas em dev)
+        logging: '%kernel.debug%'
+        profiling: '%kernel.debug%'
+
+        # Tipos customizados (se necessário)
+        types:
+            # ocpp_message_type: App\Infrastructure\Doctrine\Type\OcppMessageType
+
+    orm:
+        auto_generate_proxy_classes: true
+        enable_lazy_ghost_objects: true
+        report_fields_where_declared: true
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        auto_mapping: true
+
+        mappings:
+            # Sylius mappings
+            App:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                alias: App
+
+            # Custom charging entities
+            Charging:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity/Charging'
+                prefix: 'App\Entity\Charging'
+                alias: Charging
+
+        # Configurações de cache (Redis em produção)
+        metadata_cache_driver:
+            type: pool
+            pool: doctrine.system_cache_pool
+
+        query_cache_driver:
+            type: pool
+            pool: doctrine.system_cache_pool
+
+        result_cache_driver:
+            type: pool
+            pool: doctrine.result_cache_pool
+
+        # DQL functions customizadas (PostgreSQL)
+        dql:
+            string_functions:
+                # Exemplo: LOWER, UPPER já estão disponíveis
+                # Add custom functions aqui se necessário
+            numeric_functions:
+                # Funções PostgreSQL: ROUND, CEIL, FLOOR
+            datetime_functions:
+                # DATE_TRUNC, etc.
+
+when@test:
+    doctrine:
+        dbal:
+            # Use sqlite in memory for tests
+            url: 'sqlite:///:memory:'
+            driver: 'pdo_sqlite'
+            memory: true
+
+when@prod:
+    doctrine:
+        orm:
+            auto_generate_proxy_classes: false
+            proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+        # Segunda conexão opcional (read replicas)
+        # dbal:
+        #     connections:
+        #         default:
+        #             # Primary (write)
+        #             url: '%env(resolve:DATABASE_URL)%'
+        #         read:
+        #             # Read replica
+        #             url: '%env(resolve:DATABASE_READ_URL)%'
+
+# Cache pools
+framework:
+    cache:
+        pools:
+            doctrine.result_cache_pool:
+                adapter: cache.adapter.redis
+                provider: 'redis://redis:6379/1'
+                default_lifetime: 3600
+
+            doctrine.system_cache_pool:
+                adapter: cache.adapter.redis
+                provider: 'redis://redis:6379/2'
+                default_lifetime: 86400

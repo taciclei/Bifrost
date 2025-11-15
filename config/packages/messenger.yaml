@@ -1,0 +1,140 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        # Transports
+        transports:
+            # Sync - executa imediatamente
+            sync: 'sync://'
+
+            # Async - Redis para mensagens assíncronas
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                serializer: messenger.transport.symfony_serializer
+                options:
+                    stream: eletroposto_messages
+                    group: eletroposto_consumer
+                    consumer: app
+                    auto_setup: true
+                    delete_after_ack: true
+                    delete_after_reject: true
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000  # 1 segundo
+                    multiplier: 2
+                    max_delay: 30000  # 30 segundos
+
+            # OCPP - Alta prioridade (Redis separado)
+            ocpp:
+                dsn: '%env(REDIS_URL)%/5'
+                serializer: messenger.transport.symfony_serializer
+                options:
+                    stream: ocpp_messages
+                    group: ocpp_consumer
+                    consumer: ocpp
+                    auto_setup: true
+                retry_strategy:
+                    max_retries: 5
+                    delay: 500  # 500ms
+                    multiplier: 1.5
+                    max_delay: 10000  # 10 segundos
+
+            # Notificações - Baixa prioridade
+            notifications:
+                dsn: '%env(REDIS_URL)%/6'
+                options:
+                    stream: notifications
+                    group: notification_consumer
+                    consumer: notifications
+                retry_strategy:
+                    max_retries: 2
+                    delay: 5000  # 5 segundos
+
+            # Failed - armazena mensagens que falharam
+            failed: 'doctrine://default?queue_name=failed'
+
+        # Routing - Define qual transport usar para cada mensagem
+        routing:
+            # ===== OCPP Messages (Alta prioridade) =====
+            'App\Message\Ocpp\BootNotification': ocpp
+            'App\Message\Ocpp\Heartbeat': ocpp
+            'App\Message\Ocpp\StatusNotification': ocpp
+            'App\Message\Ocpp\StartTransaction': ocpp
+            'App\Message\Ocpp\StopTransaction': ocpp
+            'App\Message\Ocpp\MeterValues': ocpp
+            'App\Message\Ocpp\Authorize': ocpp
+            'App\Message\Ocpp\DataTransfer': ocpp
+
+            # ===== Charging Sessions =====
+            'App\Message\Charging\SessionStarted': async
+            'App\Message\Charging\SessionCompleted': async
+            'App\Message\Charging\SessionCancelled': async
+            'App\Message\Charging\UpdateSessionMetrics': async
+
+            # ===== Payments & Invoices =====
+            'App\Message\Payment\ProcessPayment': async
+            'App\Message\Payment\GenerateInvoice': async
+            'App\Message\Payment\SendReceipt': notifications
+
+            # ===== Notifications (Baixa prioridade) =====
+            'App\Message\Notification\SendEmail': notifications
+            'App\Message\Notification\SendSms': notifications
+            'App\Message\Notification\SendPushNotification': notifications
+            'App\Message\Notification\SendWebhook': notifications
+
+            # ===== Analytics & Reporting =====
+            'App\Message\Analytics\UpdateDashboard': async
+            'App\Message\Analytics\GenerateReport': async
+            'App\Message\Analytics\CalculateMetrics': async
+
+            # ===== Maintenance =====
+            'App\Message\Maintenance\CheckChargerHealth': async
+            'App\Message\Maintenance\ScheduleMaintenance': async
+            'App\Message\Maintenance\UpdateFirmware': async
+
+            # Sylius default messages (se houver)
+            'Sylius\Bundle\CoreBundle\Message\Admin\*': async
+
+        # Buses
+        buses:
+            messenger.bus.default:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+
+                    # Logging de todas as mensagens
+                    - messenger.middleware.send_message
+                    - messenger.middleware.handle_message
+
+            # Command bus (CQRS)
+            command.bus:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+
+            # Query bus (CQRS)
+            query.bus:
+                middleware:
+                    - validation
+
+        # Default bus
+        default_bus: messenger.bus.default
+
+when@prod:
+    framework:
+        messenger:
+            # Em produção, configurar workers dedicados
+            transports:
+                async:
+                    options:
+                        # Aumentar prefetch para melhor throughput
+                        prefetch_count: 10
+
+when@test:
+    framework:
+        messenger:
+            # Em testes, executar tudo sincronamente
+            transports:
+                async: 'in-memory://'
+                ocpp: 'in-memory://'
+                notifications: 'in-memory://'

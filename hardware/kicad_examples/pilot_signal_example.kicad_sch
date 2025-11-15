@@ -1,0 +1,218 @@
+(kicad_sch (version 20231120) (generator "eeschema") (generator_version "9.0")
+
+  (uuid "12345678-abcd-1234-abcd-123456789abc")
+
+  (paper "A4")
+
+  (title_block
+    (title "ELETROPOSTO - Circuit Pilot Signal IEC 61851-1")
+    (date "2025-01-08")
+    (rev "1.0")
+    (company "Eletroposto Belém - Projeto Thor")
+    (comment 1 "Circuit de contrôle signal Pilot pour borne de recharge EV")
+    (comment 2 "Conforme IEC 61851-1 - PWM 1kHz ±12V")
+    (comment 3 "Designer: Équipe Technique Eletroposto")
+    (comment 4 "Licence: MIT")
+  )
+
+  (lib_symbols
+    (symbol "Device:R"
+      (pin_numbers hide)
+      (pin_names (offset 0))
+      (property "Reference" "R" (at 2.032 0 90))
+      (property "Value" "R" (at 0 0 90))
+      (property "Footprint" "" (at -1.778 0 90))
+      (property "Datasheet" "~" (at 0 0 0))
+    )
+
+    (symbol "Device:D_Zener"
+      (pin_numbers hide)
+      (property "Reference" "D" (at 0 2.54 0))
+      (property "Value" "D_Zener" (at 0 -2.54 0))
+      (property "Footprint" "" (at 0 0 0))
+    )
+
+    (symbol "MCU_ST_STM32F4:STM32F407VGTx"
+      (property "Reference" "U" (at -15.24 64.77 0))
+      (property "Value" "STM32F407VGTx" (at 12.7 64.77 0))
+      (property "Footprint" "Package_QFP:LQFP-100_14x14mm_P0.5mm" (at -12.7 -66.04 0))
+      (property "Datasheet" "https://www.st.com/resource/en/datasheet/stm32f407vg.pdf" (at 0 0 0))
+    )
+
+    (symbol "Transistor_FET:2N7000"
+      (property "Reference" "Q" (at 5.08 1.905 0))
+      (property "Value" "2N7000" (at 5.08 0 0))
+      (property "Footprint" "Package_TO_SOT_THT:TO-92_Inline" (at 5.08 -1.905 0))
+    )
+
+    (symbol "Connector:Conn_01x02_Pin"
+      (property "Reference" "J" (at 0 2.54 0))
+      (property "Value" "Conn_01x02_Pin" (at 0 -5.08 0))
+      (property "Footprint" "" (at 0 0 0))
+    )
+  )
+
+  ; Annotation des composants
+  (junction (at 80.0 60.0) (diameter 0) (color 0 0 0 0))
+  (junction (at 100.0 60.0) (diameter 0) (color 0 0 0 0))
+
+  ; Fils de connexion (wires)
+  (wire (pts (xy 50.0 60.0) (xy 60.0 60.0))
+    (stroke (width 0.5) (type default))
+    (uuid "aaaaaaaa-1111-2222-3333-444444444444")
+  )
+
+  (wire (pts (xy 60.0 60.0) (xy 80.0 60.0))
+    (stroke (width 0.5) (type default))
+    (uuid "bbbbbbbb-1111-2222-3333-444444444444")
+  )
+
+  (wire (pts (xy 80.0 60.0) (xy 100.0 60.0))
+    (stroke (width 0.5) (type default))
+    (uuid "cccccccc-1111-2222-3333-444444444444")
+  )
+
+  ; Labels pour nets
+  (label "+12V" (at 50.0 60.0 180)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "label-12v-1")
+  )
+
+  (label "CP_OUT" (at 100.0 60.0 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "label-cp-out-1")
+  )
+
+  (label "PWM_OUT" (at 70.0 80.0 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "label-pwm-1")
+  )
+
+  ; Symboles de composants
+  (symbol (lib_id "Device:R") (at 66.0 60.0 90) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid "res-1k-pilot-1")
+    (property "Reference" "R1" (at 66.0 55.0 90)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "1k" (at 66.0 65.0 90)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Resistor_SMD:R_0805_2012Metric" (at 66.0 61.778 90)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 66.0 60.0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid "res-r1-pin1"))
+    (pin "2" (uuid "res-r1-pin2"))
+  )
+
+  (symbol (lib_id "Transistor_FET:2N7000") (at 90.0 75.0 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid "mosfet-pwm-switch-1")
+    (property "Reference" "Q1" (at 96.52 73.66 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "2N7000" (at 96.52 76.2 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Package_TO_SOT_THT:TO-92_Inline" (at 95.25 76.835 0)
+      (effects (font (size 1.27 1.27) italic) (justify left) hide)
+    )
+    (property "Datasheet" "https://www.onsemi.com/pdf/datasheet/2n7000-d.pdf" (at 90.0 75.0 0)
+      (effects (font (size 1.27 1.27)) (justify left) hide)
+    )
+    (pin "1" (uuid "mosfet-q1-gate"))
+    (pin "2" (uuid "mosfet-q1-drain"))
+    (pin "3" (uuid "mosfet-q1-source"))
+  )
+
+  (symbol (lib_id "Device:D_Zener") (at 100.0 70.0 270) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid "zener-protection-15v-1")
+    (property "Reference" "D1" (at 102.87 68.58 90)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "15V" (at 102.87 71.12 90)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Diode_SMD:D_SOD-123" (at 100.0 70.0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 100.0 70.0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid "zener-d1-cathode"))
+    (pin "2" (uuid "zener-d1-anode"))
+  )
+
+  (symbol (lib_id "MCU_ST_STM32F4:STM32F407VGTx") (at 40.0 100.0 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid "mcu-stm32f407-1")
+    (property "Reference" "U1" (at 42.0194 34.29 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "STM32F407VGTx" (at 42.0194 36.83 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Package_QFP:LQFP-100_14x14mm_P0.5mm" (at 27.94 165.1 0)
+      (effects (font (size 1.27 1.27)) (justify right) hide)
+    )
+    (property "Datasheet" "https://www.st.com/resource/en/datasheet/stm32f407vg.pdf" (at 40.0 100.0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    ; Pins simplifiés (normalement 100 pins)
+    (pin "1" (uuid "mcu-u1-vbat"))
+    (pin "20" (uuid "mcu-u1-pa0"))
+    (pin "45" (uuid "mcu-u1-pwm-out"))
+  )
+
+  (symbol (lib_id "Connector:Conn_01x02_Pin") (at 120.0 60.0 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid "connector-cp-output-1")
+    (property "Reference" "J1" (at 120.65 55.88 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "CP_Connector" (at 120.65 67.31 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" (at 120.0 60.0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid "conn-j1-cp-sig"))
+    (pin "2" (uuid "conn-j1-gnd"))
+  )
+
+  ; Texte de notes
+  (text "Circuit Pilot Signal - IEC 61851-1\n\nGénère PWM 1kHz, ±12V\nDuty Cycle: 10-96% = 6A-80A max\n\nÉtats véhicule:\n• État A: +12V DC (pas de véhicule)\n• État B: +9V PWM (connecté)\n• État C: +6V PWM (charge)\n• État E: 0V (erreur)"
+    (exclude_from_sim no)
+    (at 140.0 50.0 0)
+    (effects (font (size 1.27 1.27)) (justify left top))
+    (uuid "text-notes-circuit-1")
+  )
+
+  ; Sheet instances (pour hiérarchie)
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+
+  ; Symbol instances avec annotations
+  (symbol_instances
+    (path "/res-1k-pilot-1"
+      (reference "R1") (unit 1) (value "1k") (footprint "Resistor_SMD:R_0805_2012Metric")
+    )
+    (path "/mosfet-pwm-switch-1"
+      (reference "Q1") (unit 1) (value "2N7000") (footprint "Package_TO_SOT_THT:TO-92_Inline")
+    )
+    (path "/zener-protection-15v-1"
+      (reference "D1") (unit 1) (value "15V") (footprint "Diode_SMD:D_SOD-123")
+    )
+    (path "/mcu-stm32f407-1"
+      (reference "U1") (unit 1) (value "STM32F407VGTx") (footprint "Package_QFP:LQFP-100_14x14mm_P0.5mm")
+    )
+    (path "/connector-cp-output-1"
+      (reference "J1") (unit 1) (value "CP_Connector") (footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+    )
+  )
+)

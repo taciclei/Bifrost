@@ -1,0 +1,187 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+parameters:
+    locale: 'pt_BR'
+    app.supported_locales: 'pt_BR|pt|en'
+
+    # OCPP Configuration
+    ocpp.version: '%env(OCPP_VERSION)%'
+    ocpp.heartbeat_interval: '%env(int:OCPP_HEARTBEAT_INTERVAL)%'
+    ocpp.meter_value_interval: '%env(int:OCPP_METER_VALUE_INTERVAL)%'
+
+    # WebSocket Configuration
+    websocket.host: '%env(WEBSOCKET_HOST)%'
+    websocket.port: '%env(int:WEBSOCKET_PORT)%'
+
+services:
+    # Default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically inject dependencies
+        autoconfigure: true # Automatically register services as commands, event subscribers, etc.
+        public: false       # Services are private by default
+        bind:
+            # Bind parameters to arguments
+            $projectDir: '%kernel.project_dir%'
+            $environment: '%kernel.environment%'
+            $locale: '%locale%'
+            $ocppVersion: '%ocpp.version%'
+            $websocketHost: '%websocket.host%'
+            $websocketPort: '%websocket.port%'
+
+    # Makes classes in src/ available to be used as services
+    # This creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # ===== Controllers =====
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # Health Check Controller (público)
+    App\Controller\HealthCheckController:
+        public: true
+        tags: ['controller.service_arguments']
+
+    # ===== Repositories =====
+    App\Repository\:
+        resource: '../src/Repository/'
+
+    # ===== Services =====
+
+    # OCPP Services
+    App\Service\Ocpp\OcppMessageHandler:
+        arguments:
+            $logger: '@monolog.logger.ocpp'
+
+    App\Service\Ocpp\OcppProtocolValidator:
+        public: true
+
+    App\Service\Ocpp\ChargerManager:
+        public: true
+
+    # Charging Services
+    App\Service\Charging\ChargingSessionManager:
+        public: true
+
+    App\Service\Charging\MeterValueProcessor:
+        public: true
+
+    App\Service\Charging\TariffCalculator:
+        public: true
+
+    # Payment Services
+    App\Service\Payment\PaymentProcessor:
+        public: true
+
+    App\Service\Payment\InvoiceGenerator:
+        public: true
+
+    # Notification Services
+    App\Service\Notification\EmailNotifier:
+        arguments:
+            $mailer: '@mailer.mailer'
+
+    App\Service\Notification\SmsNotifier:
+        public: true
+
+    # Analytics Services
+    App\Service\Analytics\DashboardService:
+        public: true
+
+    App\Service\Analytics\ReportGenerator:
+        public: true
+
+    # ===== Event Listeners =====
+    App\EventListener\:
+        resource: '../src/EventListener/'
+        tags:
+            - { name: kernel.event_listener }
+
+    # ===== Message Handlers =====
+    App\MessageHandler\:
+        resource: '../src/MessageHandler/'
+        tags:
+            - { name: messenger.message_handler }
+
+    # ===== WebSocket Server =====
+    App\WebSocket\OcppServer:
+        public: true
+        arguments:
+            $clients: '@app.websocket.client_storage'
+
+    # Client storage (SplObjectStorage)
+    app.websocket.client_storage:
+        class: SplObjectStorage
+        public: false
+
+    # ===== Redis Session Handler =====
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+        arguments:
+            - '@snc_redis.session'  # Redis connection
+
+    # ===== Custom Services =====
+
+    # Charger Location Service (para calcular distâncias)
+    App\Service\Location\ChargerLocationService:
+        public: true
+
+    # LGPD Data Anonymizer
+    App\Service\Security\DataAnonymizer:
+        public: true
+
+    # Audit Logger
+    App\Service\Security\AuditLogger:
+        arguments:
+            $logger: '@monolog.logger.audit'
+
+    # ===== Sylius Customizations =====
+
+    # Custom Shop User Provider (se necessário)
+    # app.shop_user_provider:
+    #     class: App\Security\UserProvider\ShopUserProvider
+    #     arguments:
+    #         - '@sylius.repository.shop_user'
+
+    # ===== Doctrine Event Subscribers =====
+    App\EventSubscriber\Doctrine\:
+        resource: '../src/EventSubscriber/Doctrine/'
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    # ===== API Event Subscribers =====
+    App\EventSubscriber\Api\:
+        resource: '../src/EventSubscriber/Api/'
+
+    # ===== Console Commands =====
+    App\Command\:
+        resource: '../src/Command/'
+        tags:
+            - { name: console.command }
+
+    # WebSocket Server Command
+    App\Command\WebSocketServerCommand:
+        tags:
+            - { name: console.command, command: 'app:websocket:server' }
+
+# Aliases for commonly used services
+    # Redis
+    Redis:
+        class: Redis
+        factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
+        arguments:
+            - '%env(REDIS_URL)%'
+
+    # Monolog channels
+    monolog.logger.ocpp:
+        alias: 'monolog.logger'
+        public: false
+
+    monolog.logger.audit:
+        alias: 'monolog.logger'
+        public: false

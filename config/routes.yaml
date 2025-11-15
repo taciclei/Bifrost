@@ -1,0 +1,15 @@
+# API Platform routes
+api_platform:
+    resource: .
+    type: api_platform
+    prefix: /api
+
+# Custom routes
+app_health_check:
+    path: /health
+    controller: App\Controller\HealthCheckController::index
+    methods: [GET]
+
+# WebSocket endpoint info (não é HTTP, mas documentamos aqui)
+# ws://localhost:9000 - OCPP WebSocket Server
+# Handled by: bin/console app:websocket:server

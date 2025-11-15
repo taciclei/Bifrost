@@ -1,0 +1,142 @@
+security:
+    # Password hashers
+    password_hashers:
+        Sylius\Component\User\Model\UserInterface: argon2i
+        App\Entity\User:
+            algorithm: auto
+            cost: 12
+
+    # Providers
+    providers:
+        # Sylius Admin Users
+        sylius_admin_user_provider:
+            id: sylius.admin_user_provider.email_or_name_based
+
+        # Sylius Shop Users (customers)
+        sylius_shop_user_provider:
+            id: sylius.shop_user_provider.email_or_name_based
+
+        # API Users (JWT)
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    # Firewalls
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        # Admin firewall
+        admin:
+            pattern: ^/admin
+            context: admin
+            provider: sylius_admin_user_provider
+            form_login:
+                provider: sylius_admin_user_provider
+                login_path: sylius_admin_login
+                check_path: sylius_admin_login_check
+                failure_path: sylius_admin_login
+                default_target_path: sylius_admin_dashboard
+                use_forward: false
+                use_referer: true
+                csrf_token_generator: security.csrf.token_manager
+                csrf_parameter: _csrf_admin_security_token
+                csrf_token_id: admin_authenticate
+
+            remember_me:
+                secret: '%kernel.secret%'
+                path: /admin
+                name: APP_ADMIN_REMEMBER_ME
+                lifetime: 31536000  # 1 ano
+                remember_me_parameter: _remember_me
+
+            logout:
+                path: sylius_admin_logout
+                target: sylius_admin_login
+
+            # Rate limiting para login admin
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        # Shop firewall (customers)
+        shop:
+            pattern: ^/
+            context: shop
+            provider: sylius_shop_user_provider
+            form_login:
+                provider: sylius_shop_user_provider
+                login_path: sylius_shop_login
+                check_path: sylius_shop_login_check
+                failure_path: sylius_shop_login
+                default_target_path: sylius_shop_account_dashboard
+                use_forward: false
+                use_referer: true
+                csrf_token_generator: security.csrf.token_manager
+                csrf_parameter: _csrf_shop_security_token
+                csrf_token_id: shop_authenticate
+
+            remember_me:
+                secret: '%kernel.secret%'
+                name: APP_SHOP_REMEMBER_ME
+                lifetime: 2592000  # 30 dias
+
+            logout:
+                path: sylius_shop_logout
+                target: sylius_shop_login
+
+            # Rate limiting para login shop
+            login_throttling:
+                max_attempts: 10
+                interval: '15 minutes'
+
+        # API firewall (JWT)
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            jwt: ~
+
+            # Rate limiting para API
+            # Configurado via rate_limiter em framework.yaml
+
+    # Access Control
+    access_control:
+        # Admin
+        - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+        - { path: ^/admin/register, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMINISTRATION_ACCESS }
+
+        # Shop (customers)
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/verify, roles: PUBLIC_ACCESS }
+        - { path: ^/account, roles: ROLE_USER }
+
+        # API
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }  # Swagger UI
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+
+    # Role hierarchy
+    role_hierarchy:
+        ROLE_ADMIN: ROLE_USER
+        ROLE_ADMINISTRATION_ACCESS: ROLE_ADMIN
+        ROLE_SUPER_ADMIN: ROLE_ADMINISTRATION_ACCESS
+
+        # Custom roles para Eletroposto
+        ROLE_OPERATOR: ROLE_USER  # Operadores de estação
+        ROLE_FLEET_MANAGER: ROLE_USER  # Gerentes de frota
+        ROLE_SUPPORT: ROLE_ADMIN  # Suporte técnico
+
+when@test:
+    security:
+        password_hashers:
+            # Use md5 for faster tests
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: md5
+                encode_as_base64: false
+                iterations: 0

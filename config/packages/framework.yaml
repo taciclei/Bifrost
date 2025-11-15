@@ -1,0 +1,164 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Cache configuration
+    cache:
+        # Redis cache adapter
+        app: cache.adapter.redis
+        default_redis_provider: '%env(REDIS_URL)%'
+
+        pools:
+            # Cache pool para sessões de carregamento
+            charging.session.cache:
+                adapter: cache.adapter.redis
+                provider: 'redis://redis:6379/3'
+                default_lifetime: 7200  # 2 horas
+
+            # Cache pool para dados de carregadores (OCPP)
+            charger.status.cache:
+                adapter: cache.adapter.redis
+                provider: 'redis://redis:6379/4'
+                default_lifetime: 300  # 5 minutos
+
+    # Session configuration (Redis)
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
+        cookie_secure: auto
+        cookie_samesite: lax
+        gc_probability: 0  # Redis handles garbage collection
+        gc_maxlifetime: 3600  # 1 hora
+
+    # ESI (Edge Side Includes) para cache de fragmentos
+    esi: true
+    fragments: true
+
+    # HTTP Client configuration
+    http_client:
+        max_host_connections: 10
+        default_options:
+            timeout: 30
+            max_redirects: 3
+            headers:
+                'User-Agent': 'Eletroposto/1.0'
+
+        # OCPP charger client
+        scoped_clients:
+            ocpp.client:
+                base_uri: '%env(OCPP_BASE_URL)%'
+                timeout: 60
+                retry_failed:
+                    max_retries: 3
+
+    # PHP errors configuration
+    php_errors:
+        log: true
+
+    # Serializer
+    serializer:
+        enable_annotations: true
+
+    # Validator
+    validation:
+        email_validation_mode: html5
+        enable_annotations: true
+
+    # Translator
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks:
+            - pt_BR
+            - pt
+            - en
+
+    # Rate Limiter (proteção contra abuso)
+    rate_limiter:
+        # Login rate limiting
+        login:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '15 minutes'
+            rate:
+                interval: '15 minutes'
+                amount: 5
+
+        # API rate limiting
+        api:
+            policy: 'token_bucket'
+            limit: 100
+            rate:
+                interval: '1 hour'
+                amount: 100
+
+        # OCPP messages rate limiting (por charger)
+        ocpp:
+            policy: 'fixed_window'
+            limit: 1000
+            interval: '1 minute'
+
+    # Messenger (async jobs)
+    messenger:
+        failure_transport: failed
+
+        transports:
+            # Sync transport (immediate)
+            sync: 'sync://'
+
+            # Async transport (Redis)
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    stream: messages
+                    group: eletroposto
+                    consumer: app
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 10000
+
+            # Failed messages
+            failed: 'doctrine://default?queue_name=failed'
+
+        routing:
+            # Mensagens OCPP processadas de forma assíncrona
+            'App\Message\OcppMessageReceived': async
+            'App\Message\ChargingSessionCompleted': async
+            'App\Message\SendNotification': async
+            'App\Message\GenerateInvoice': async
+
+    # Lock (distributed locks com Redis)
+    lock:
+        charger_lock:
+            store: 'redis://redis:6379'
+            ttl: 300  # 5 minutos
+
+    # Annotations (legacy, será descontinuado)
+    # annotations: false  # Usar attributes PHP 8+
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file
+        cache:
+            app: cache.adapter.array
+
+when@prod:
+    framework:
+        cache:
+            # APCu para pequenos dados em memória
+            app: cache.adapter.apcu
+
+            pools:
+                cache.apcu:
+                    adapter: cache.adapter.apcu
+                    default_lifetime: 600
+
+        # Desabilitar ESI/fragments em produção se não usar Varnish
+        # esi: false
+        # fragments: false
+
+        # PHP errors não devem logar em produção
+        php_errors:
+            log: false
